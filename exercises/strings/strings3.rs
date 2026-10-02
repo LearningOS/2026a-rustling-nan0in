@@ -1,23 +1,24 @@
 // strings3.rs
 //
 // Execute `rustlings hint strings3` or use the `hint` watch subcommand for a
-// hint.
 
-// I AM NOT DONE
+use std::fmt::format;
 
-fn trim_me(input: &str) -> String {
+fn trim_me(input: &str) -> &str {
     // TODO: Remove whitespace from both ends of a string!
-    ???
+    input.trim()
 }
 
 fn compose_me(input: &str) -> String {
     // TODO: Add " world!" to the string! There's multiple ways to do this!
-    ???
+    let mut result = input.to_string();
+    result.push_str(" world!");
+    result
 }
 
 fn replace_me(input: &str) -> String {
     // TODO: Replace "cars" in the string with "balloons"!
-    ???
+    input.replace("cars", "balloons")
 }
 
 #[cfg(test)]
