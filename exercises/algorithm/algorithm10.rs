@@ -1,8 +1,7 @@
 /*
-	graph
-	This problem requires you to implement a basic graph functio
+    graph
+    This problem requires you to implement a basic graph functio
 */
-// I AM NOT DONE
 
 use std::collections::{HashMap, HashSet};
 use std::fmt;
@@ -29,7 +28,16 @@ impl Graph for UndirectedGraph {
         &self.adjacency_table
     }
     fn add_edge(&mut self, edge: (&str, &str, i32)) {
-        //TODO
+        <Self as Graph>::add_node(self, edge.0);
+        <Self as Graph>::add_node(self, edge.1);
+        self.adjacency_table
+            .get_mut(edge.0)
+            .unwrap()
+            .push((edge.1.to_owned(), edge.2));
+        self.adjacency_table
+            .get_mut(edge.1)
+            .unwrap()
+            .push((edge.0.to_owned(), edge.2));
     }
 }
 pub trait Graph {
@@ -37,11 +45,22 @@ pub trait Graph {
     fn adjacency_table_mutable(&mut self) -> &mut HashMap<String, Vec<(String, i32)>>;
     fn adjacency_table(&self) -> &HashMap<String, Vec<(String, i32)>>;
     fn add_node(&mut self, node: &str) -> bool {
-        //TODO
-		true
+        use std::collections::hash_map::Entry;
+        match self.adjacency_table_mutable().entry(node.to_owned()) {
+            Entry::Vacant(entry) => {
+                entry.insert(Vec::new());
+                true
+            }
+            Entry::Occupied(_) => false,
+        }
     }
     fn add_edge(&mut self, edge: (&str, &str, i32)) {
-        //TODO
+        self.add_node(edge.0);
+        self.add_node(edge.1);
+        self.adjacency_table_mutable()
+            .get_mut(edge.0)
+            .unwrap()
+            .push((edge.1.to_owned(), edge.2));
     }
     fn contains(&self, node: &str) -> bool {
         self.adjacency_table().get(node).is_some()
@@ -80,5 +99,49 @@ mod test_undirected_graph {
         for edge in expected_edges.iter() {
             assert_eq!(graph.edges().contains(edge), true);
         }
+    }
+}
+
+#[cfg(test)]
+mod boundary_tests {
+    use super::*;
+
+    #[test]
+    fn repeated_node_preserves_edges_and_self_loop() {
+        let mut graph = UndirectedGraph::new();
+        assert!(graph.add_node("isolated"));
+        assert!(!graph.add_node("isolated"));
+        graph.add_edge(("a", "b", -3));
+        assert!(!graph.add_node("a"));
+        assert!(graph.contains("a") && graph.contains("b"));
+        assert!(!graph.contains("missing"));
+        assert_eq!(graph.nodes().len(), 3);
+        assert_eq!(graph.adjacency_table()["a"], [("b".to_owned(), -3)]);
+        graph.add_edge(("a", "a", 0));
+        assert_eq!(graph.adjacency_table()["a"].len(), 3);
+    }
+
+    #[test]
+    fn default_trait_edge_is_directed() {
+        struct DirectedGraph {
+            table: HashMap<String, Vec<(String, i32)>>,
+        }
+        impl Graph for DirectedGraph {
+            fn new() -> Self {
+                Self {
+                    table: HashMap::new(),
+                }
+            }
+            fn adjacency_table(&self) -> &HashMap<String, Vec<(String, i32)>> {
+                &self.table
+            }
+            fn adjacency_table_mutable(&mut self) -> &mut HashMap<String, Vec<(String, i32)>> {
+                &mut self.table
+            }
+        }
+        let mut graph = DirectedGraph::new();
+        graph.add_edge(("a", "b", 2));
+        assert_eq!(graph.table["a"], [("b".to_owned(), 2)]);
+        assert!(graph.table["b"].is_empty());
     }
 }

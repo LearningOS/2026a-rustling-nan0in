@@ -1,8 +1,7 @@
 /*
-	heap
-	This question requires you to implement a binary heap function
+    heap
+    This question requires you to implement a binary heap function
 */
-// I AM NOT DONE
 
 use std::cmp::Ord;
 use std::default::Default;
@@ -37,7 +36,17 @@ where
     }
 
     pub fn add(&mut self, value: T) {
-        //TODO
+        self.items.push(value);
+        self.count += 1;
+        let mut index = self.count;
+        while index > 1 {
+            let parent = self.parent_idx(index);
+            if !(self.comparator)(&self.items[index], &self.items[parent]) {
+                break;
+            }
+            self.items.swap(index, parent);
+            index = parent;
+        }
     }
 
     fn parent_idx(&self, idx: usize) -> usize {
@@ -57,8 +66,13 @@ where
     }
 
     fn smallest_child_idx(&self, idx: usize) -> usize {
-        //TODO
-		0
+        let left = self.left_child_idx(idx);
+        let right = self.right_child_idx(idx);
+        if right <= self.count && (self.comparator)(&self.items[right], &self.items[left]) {
+            right
+        } else {
+            left
+        }
     }
 }
 
@@ -84,8 +98,21 @@ where
     type Item = T;
 
     fn next(&mut self) -> Option<T> {
-        //TODO
-		None
+        if self.is_empty() {
+            return None;
+        }
+        let root = self.items.swap_remove(1);
+        self.count -= 1;
+        let mut index = 1;
+        while self.children_present(index) {
+            let child = self.smallest_child_idx(index);
+            if !(self.comparator)(&self.items[child], &self.items[index]) {
+                break;
+            }
+            self.items.swap(index, child);
+            index = child;
+        }
+        Some(root)
     }
 }
 
@@ -150,5 +177,34 @@ mod tests {
         assert_eq!(heap.next(), Some(4));
         heap.add(1);
         assert_eq!(heap.next(), Some(2));
+    }
+}
+
+#[cfg(test)]
+mod boundary_tests {
+    use super::*;
+
+    #[test]
+    fn heaps_drain_duplicates_reuse_and_custom_comparator() {
+        let values = [5, -2, 5, 0, 7, 1, -2];
+        let mut min = Heap::new_min();
+        let mut max = Heap::new_max();
+        for value in values {
+            min.add(value);
+            max.add(value);
+        }
+        for expected in [-2, -2, 0, 1, 5, 5, 7] {
+            assert_eq!(min.next(), Some(expected));
+        }
+        assert_eq!(min.len(), 0);
+        assert_eq!(min.next(), None);
+        min.add(9);
+        assert_eq!(min.next(), Some(9));
+        assert_eq!(max.collect::<Vec<_>>(), [7, 5, 5, 1, 0, -2, -2]);
+        let mut words = Heap::new(|a: &String, b: &String| a.len() < b.len());
+        for word in ["long", "x", "mid"] {
+            words.add(word.to_owned());
+        }
+        assert_eq!(words.collect::<Vec<_>>(), ["x", "mid", "long"]);
     }
 }
